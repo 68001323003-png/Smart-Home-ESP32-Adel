@@ -20,7 +20,7 @@
       align-items: center;
       background: #000000 url('house.jpg') no-repeat center center/cover;
       color: #ffffff;
-      padding: 35px 20px 45px;
+      padding: 25px 20px 45px;
       position: relative;
       overflow-x: hidden;
     }
@@ -42,7 +42,43 @@
     .top-section {
       text-align: center;
       z-index: 2;
-      margin-top: 10px;
+      margin-top: 5px;
+    }
+
+    /* ป้ายสถานะการเชื่อมต่อ ESP32 */
+    .esp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: rgba(231, 76, 60, 0.2);
+      border: 1px solid rgba(231, 76, 60, 0.5);
+      color: #ff7675;
+      margin-bottom: 14px;
+      backdrop-filter: blur(6px);
+      transition: all 0.3s ease;
+    }
+
+    .esp-badge.online {
+      background: rgba(46, 204, 113, 0.2);
+      border-color: rgba(46, 204, 113, 0.5);
+      color: #55efc4;
+    }
+
+    .dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ff7675;
+      box-shadow: 0 0 8px #ff7675;
+    }
+
+    .esp-badge.online .dot {
+      background: #2ecc71;
+      box-shadow: 0 0 8px #2ecc71;
     }
 
     h1 {
@@ -57,12 +93,12 @@
       font-size: 0.85rem;
       color: #cbd5e0;
       text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-      margin-bottom: 20px;
+      margin-bottom: 16px;
     }
 
     .bulb-container {
-      width: 96px;
-      height: 96px;
+      width: 90px;
+      height: 90px;
       margin: 0 auto 12px;
       display: flex;
       justify-content: center;
@@ -75,8 +111,8 @@
     }
 
     .bulb-svg {
-      width: 54px;
-      height: 54px;
+      width: 50px;
+      height: 50px;
       fill: #718096;
       transition: all 0.4s ease;
     }
@@ -169,6 +205,12 @@
 <body>
 
   <div class="top-section">
+    <!-- แถบสถานะการเชื่อมต่อ ESP32 -->
+    <div id="espBadge" class="esp-badge">
+      <span class="dot"></span>
+      <span id="espText">ESP32: ไม่ได้เชื่อมต่อ (Offline)</span>
+    </div>
+
     <h1>Smart Home Adel</h1>
     <p class="subtitle">ระบบควบคุมแสงสว่าง ESP32</p>
 
@@ -191,8 +233,11 @@
   <script>
     const bulbBox = document.getElementById('bulbBox');
     const statusText = document.getElementById('statusText');
+    const espBadge = document.getElementById('espBadge');
+    const espText = document.getElementById('espText');
 
-    function updateUI(state) {
+    function updateUI(state, esp32Online) {
+      // อัปเดตสถานะหลอดไฟ
       if (state === 'ON') {
         document.body.classList.add('light-on');
         bulbBox.classList.add('is-on');
@@ -203,6 +248,17 @@
         bulbBox.classList.remove('is-on');
         statusText.classList.remove('is-on');
         statusText.textContent = 'สถานะ: ปิดไฟ (OFF)';
+      }
+
+      // อัปเดตสถานะบอร์ด ESP32
+      if (esp32Online !== undefined) {
+        if (esp32Online) {
+          espBadge.classList.add('online');
+          espText.textContent = 'ESP32: เชื่อมต่อแล้ว (Online)';
+        } else {
+          espBadge.classList.remove('online');
+          espText.textContent = 'ESP32: ไม่ได้เชื่อมต่อ (Offline)';
+        }
       }
     }
 
@@ -225,9 +281,10 @@
 
     async function fetchStatus() {
       try {
-        const res = await fetch('/api/status');
+        // ใส่ ?source=web เพื่อไม่ให้เซิร์ฟเวอร์นับหน้าเว็บเป็นบอร์ด ESP32
+        const res = await fetch('/api/status?source=web');
         const data = await res.json();
-        updateUI(data.status);
+        updateUI(data.status, data.esp32Online);
       } catch (err) {
         console.error('กำลังรอเซิร์ฟเวอร์...', err);
       }

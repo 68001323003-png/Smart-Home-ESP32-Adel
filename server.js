@@ -11,6 +11,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
+// เก็บเวลาล่าสุดที่ ESP32 ติดต่อเข้ามา (หน่วยเป็นมิลลิวินาที)
+let lastEsp32Ping = 0;
+
 function readState() {
   try {
     if (!fs.existsSync(STATE_FILE)) {
@@ -31,8 +34,20 @@ function writeState(newStatus) {
   }
 }
 
+// API ดึงสถานะไฟ + เช็กว่า ESP32 ออนไลน์อยู่ไหม
 app.get('/api/status', (req, res) => {
-  res.json({ status: readState() });
+  // ถ้าคนเรียกไม่ใช่หน้าเว็บ (เช่น บอร์ด ESP32 เรียกเข้ามา) ให้บันทึกเวลาล่าสุดไว้
+  if (req.query.source !== 'web') {
+    lastEsp32Ping = Date.now();
+  }
+
+  // ถ้า ESP32 ติดต่อเข้ามาภายใน 5 วินาทีล่าสุด ถือว่าเชื่อมต่ออยู่ (true)
+  const isEsp32Online = (Date.now() - lastEsp32Ping) < 5000;
+
+  res.json({ 
+    status: readState(),
+    esp32Online: isEsp32Online
+  });
 });
 
 app.post('/api/control', (req, res) => {

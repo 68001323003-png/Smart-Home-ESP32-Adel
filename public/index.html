@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Home Adel - ควบคุมแสงสว่าง</title>
+  <title>Smart Home Adel - ควบคุม 4 ช่องสัญญาณ</title>
   <style>
     * {
       box-sizing: border-box;
@@ -20,7 +20,7 @@
       align-items: center;
       background: #000000 url('house.jpg') no-repeat center center/cover;
       color: #ffffff;
-      padding: 25px 20px 45px;
+      padding: 25px 16px 35px;
       position: relative;
       overflow-x: hidden;
     }
@@ -29,23 +29,21 @@
       content: '';
       position: fixed;
       inset: 0;
-      background: radial-gradient(circle at 50% 45%, rgba(255, 214, 10, 0.22), transparent 65%);
+      background: radial-gradient(circle at 50% 45%, rgba(255, 214, 10, 0.2), transparent 65%);
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.5s ease;
     }
 
-    body.light-on::after {
+    body.any-light-on::after {
       opacity: 1;
     }
 
     .top-section {
       text-align: center;
       z-index: 2;
-      margin-top: 5px;
     }
 
-    /* ป้ายสถานะการเชื่อมต่อ ESP32 */
     .esp-badge {
       display: inline-flex;
       align-items: center;
@@ -54,16 +52,16 @@
       border-radius: 50px;
       font-size: 0.8rem;
       font-weight: 600;
-      background: rgba(231, 76, 60, 0.2);
+      background: rgba(231, 76, 60, 0.25);
       border: 1px solid rgba(231, 76, 60, 0.5);
       color: #ff7675;
-      margin-bottom: 14px;
-      backdrop-filter: blur(6px);
+      margin-bottom: 12px;
+      backdrop-filter: blur(8px);
       transition: all 0.3s ease;
     }
 
     .esp-badge.online {
-      background: rgba(46, 204, 113, 0.2);
+      background: rgba(46, 204, 113, 0.25);
       border-color: rgba(46, 204, 113, 0.5);
       color: #55efc4;
     }
@@ -84,211 +82,240 @@
     h1 {
       font-size: 1.5rem;
       font-weight: 600;
-      letter-spacing: 0.5px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.85);
       margin-bottom: 4px;
     }
 
     .subtitle {
       font-size: 0.85rem;
       color: #cbd5e0;
-      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
-      margin-bottom: 16px;
-    }
-
-    .bulb-container {
-      width: 90px;
-      height: 90px;
-      margin: 0 auto 12px;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 50%;
-      background: rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      transition: all 0.4s ease;
-    }
-
-    .bulb-svg {
-      width: 50px;
-      height: 50px;
-      fill: #718096;
-      transition: all 0.4s ease;
-    }
-
-    .bulb-container.is-on {
-      background: rgba(255, 214, 10, 0.25);
-      border-color: rgba(255, 214, 10, 0.6);
-      box-shadow: 0 0 45px rgba(255, 214, 10, 0.8),
-                  inset 0 0 18px rgba(255, 214, 10, 0.5);
-    }
-
-    .bulb-container.is-on .bulb-svg {
-      fill: #ffd60a;
-      filter: drop-shadow(0 0 12px #ffd60a);
-    }
-
-    .status-badge {
-      display: inline-block;
-      padding: 5px 16px;
-      border-radius: 50px;
-      font-size: 0.85rem;
-      font-weight: 600;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-      color: #cbd5e0;
-      transition: all 0.3s ease;
-    }
-
-    .status-badge.is-on {
-      background: rgba(255, 214, 10, 0.2);
-      color: #ffd60a;
-      border-color: rgba(255, 214, 10, 0.5);
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
     }
 
     .bottom-controls {
       width: 100%;
-      max-width: 340px;
-      background: rgba(20, 22, 28, 0.78);
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      max-width: 400px;
+      background: rgba(20, 22, 28, 0.82);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 22px;
       padding: 18px;
       z-index: 2;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.75);
     }
 
-    .btn-group {
+    .relay-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .relay-card {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 16px;
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      user-select: none;
+    }
+
+    .relay-card:active {
+      transform: scale(0.96);
+    }
+
+    .relay-card.is-on {
+      background: rgba(255, 214, 10, 0.2);
+      border-color: rgba(255, 214, 10, 0.65);
+      box-shadow: 0 0 20px rgba(255, 214, 10, 0.25);
+    }
+
+    .bulb-icon {
+      width: 34px;
+      height: 34px;
+      fill: #718096;
+      margin-bottom: 6px;
+      transition: all 0.3s ease;
+    }
+
+    .relay-card.is-on .bulb-icon {
+      fill: #ffd60a;
+      filter: drop-shadow(0 0 8px #ffd60a);
+    }
+
+    .relay-title {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .relay-pin {
+      font-size: 0.72rem;
+      color: #a0aec0;
+      margin-bottom: 6px;
+    }
+
+    .relay-state {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 2px 10px;
+      border-radius: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #cbd5e0;
+    }
+
+    .relay-card.is-on .relay-state {
+      background: #ffd60a;
+      color: #000000;
+    }
+
+    .all-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.12);
     }
 
     button {
-      padding: 15px 0;
-      font-size: 1.1rem;
+      padding: 12px 0;
+      font-size: 0.95rem;
       font-weight: 700;
       border: none;
-      border-radius: 14px;
+      border-radius: 12px;
       cursor: pointer;
       transition: all 0.2s ease;
-      letter-spacing: 1px;
     }
 
     button:active {
-      transform: scale(0.95);
+      transform: scale(0.96);
     }
 
-    .btn-on {
+    .btn-all-on {
       background: #2ecc71;
       color: #ffffff;
-      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.35);
     }
 
-    .btn-on:hover {
-      background: #27ae60;
-    }
-
-    .btn-off {
+    .btn-all-off {
       background: #e74c3c;
       color: #ffffff;
-      box-shadow: 0 6px 20px rgba(231, 76, 60, 0.35);
-    }
-
-    .btn-off:hover {
-      background: #c0392b;
     }
   </style>
 </head>
 <body>
 
   <div class="top-section">
-    <!-- แถบสถานะการเชื่อมต่อ ESP32 -->
     <div id="espBadge" class="esp-badge">
       <span class="dot"></span>
       <span id="espText">ESP32: ไม่ได้เชื่อมต่อ (Offline)</span>
     </div>
-
     <h1>Smart Home Adel</h1>
-    <p class="subtitle">ระบบควบคุมแสงสว่าง ESP32</p>
-
-    <div id="bulbBox" class="bulb-container">
-      <svg class="bulb-svg" viewBox="0 0 24 24">
-        <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
-      </svg>
-    </div>
-
-    <div id="statusText" class="status-badge">สถานะ: ปิดไฟ (OFF)</div>
+    <p class="subtitle">ระบบควบคุมรีเลย์ 4 ช่อง (Real-time WebSocket)</p>
   </div>
 
   <div class="bottom-controls">
-    <div class="btn-group">
-      <button class="btn-on" onclick="setLight('ON')">ON</button>
-      <button class="btn-off" onclick="setLight('OFF')">OFF</button>
+    <div class="relay-grid" id="relayGrid"></div>
+
+    <div class="all-controls">
+      <button class="btn-all-on" onclick="controlAll(true)">เปิดทั้งหมด (ON)</button>
+      <button class="btn-all-off" onclick="controlAll(false)">ปิดทั้งหมด (OFF)</button>
     </div>
   </div>
 
   <script>
-    const bulbBox = document.getElementById('bulbBox');
-    const statusText = document.getElementById('statusText');
+    const channelInfo = [
+      { name: 'ไฟดวงที่ 1', pin: 'GPIO 26' },
+      { name: 'ไฟดวงที่ 2', pin: 'GPIO 25' },
+      { name: 'ไฟดวงที่ 3', pin: 'GPIO 33' },
+      { name: 'ไฟดวงที่ 4', pin: 'GPIO 32' }
+    ];
+
+    let relayStates = [false, false, false, false];
+    let ws;
+
+    const relayGrid = document.getElementById('relayGrid');
     const espBadge = document.getElementById('espBadge');
     const espText = document.getElementById('espText');
 
-    function updateUI(state, esp32Online) {
-      if (state === 'ON') {
-        document.body.classList.add('light-on');
-        bulbBox.classList.add('is-on');
-        statusText.classList.add('is-on');
-        statusText.textContent = 'สถานะ: เปิดไฟ (ON)';
+    function renderCards() {
+      relayGrid.innerHTML = '';
+      let anyOn = false;
+
+      relayStates.forEach((isOn, index) => {
+        if (isOn) anyOn = true;
+        const card = document.createElement('div');
+        card.className = `relay-card ${isOn ? 'is-on' : ''}`;
+        card.onclick = () => toggleRelay(index);
+        card.innerHTML = `
+          <svg class="bulb-icon" viewBox="0 0 24 24">
+            <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+          </svg>
+          <div class="relay-title">${channelInfo[index].name}</div>
+          <div class="relay-pin">${channelInfo[index].pin}</div>
+          <div class="relay-state">${isOn ? 'ON' : 'OFF'}</div>
+        `;
+        relayGrid.appendChild(card);
+      });
+
+      document.body.classList.toggle('any-light-on', anyOn);
+    }
+
+    function updateEspStatus(online) {
+      if (online) {
+        espBadge.classList.add('online');
+        espText.textContent = 'ESP32: เชื่อมต่อแล้ว (Online)';
       } else {
-        document.body.classList.remove('light-on');
-        bulbBox.classList.remove('is-on');
-        statusText.classList.remove('is-on');
-        statusText.textContent = 'สถานะ: ปิดไฟ (OFF)';
+        espBadge.classList.remove('online');
+        espText.textContent = 'ESP32: ไม่ได้เชื่อมต่อ (Offline)';
       }
+    }
 
-      if (esp32Online !== undefined) {
-        if (esp32Online) {
-          espBadge.classList.add('online');
-          espText.textContent = 'ESP32: เชื่อมต่อแล้ว (Online)';
-        } else {
-          espBadge.classList.remove('online');
-          espText.textContent = 'ESP32: ไม่ได้เชื่อมต่อ (Offline)';
+    function connectWS() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}/web`);
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        if (data.type === 'INIT_STATE') {
+          relayStates = data.relays;
+          updateEspStatus(data.espOnline);
+          renderCards();
+        } else if (data.type === 'STATE_UPDATE') {
+          relayStates = data.relays;
+          renderCards();
+        } else if (data.type === 'ESP_STATUS') {
+          updateEspStatus(data.online);
         }
+      };
+
+      ws.onclose = () => {
+        setTimeout(connectWS, 2000);
+      };
+    }
+
+    function toggleRelay(ch) {
+      const nextState = !relayStates[ch];
+      relayStates[ch] = nextState;
+      renderCards();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'CONTROL', ch, state: nextState }));
       }
     }
 
-    async function setLight(state) {
-      updateUI(state);
-      try {
-        const res = await fetch('/api/control', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ status: state })
-        });
-        const data = await res.json();
-        if (data.success) {
-          updateUI(data.status);
-        }
-      } catch (err) {
-        console.error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้:', err);
+    function controlAll(state) {
+      relayStates = [state, state, state, state];
+      renderCards();
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'CONTROL_ALL', state }));
       }
     }
 
-    async function fetchStatus() {
-      try {
-        const res = await fetch('/api/status?source=web');
-        const data = await res.json();
-        updateUI(data.status, data.esp32Online);
-      } catch (err) {
-        console.error('กำลังรอเซิร์ฟเวอร์...', err);
-      }
-    }
-
-    fetchStatus();
-    setInterval(fetchStatus, 2000);
+    renderCards();
+    connectWS();
   </script>
 
 </body>

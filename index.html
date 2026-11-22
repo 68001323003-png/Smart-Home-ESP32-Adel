@@ -1,224 +1,247 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Smart Home Adel</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Home Adel - ควบคุมแสงสว่าง</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
 
-<style>
-* { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      /* แสดงรูป house.jpg เต็มจอโดยไม่บังตัวบ้านตรงกลาง */
+      background: #000000 url('house.jpg') no-repeat center center/cover;
+      color: #ffffff;
+      padding: 35px 20px 45px;
+      position: relative;
+      overflow-x: hidden;
+    }
 
-body {
-  margin: 0;
-  padding: 20px;
-  font-family: Arial, sans-serif;
-  background: #edf2f7;
-  color: #1e293b;
-}
+    /* เอฟเฟกต์แสงไฟอุ่นๆ ส่องลงมาที่บ้านเมื่อกด ON */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(circle at 50% 45%, rgba(255, 214, 10, 0.22), transparent 65%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.5s ease;
+    }
 
-.container {
-  max-width: 500px;
-  margin: auto;
-  background: white;
-  padding: 22px;
-  border-radius: 22px;
-  box-shadow: 0 8px 25px #0001;
-}
+    body.light-on::after {
+      opacity: 1;
+    }
 
-header {
-  text-align: center;
-  margin-bottom: 20px;
-}
+    /* ส่วนบน: หัวข้อและหลอดไฟบนท้องฟ้า (ไม่บังตัวบ้าน) */
+    .top-section {
+      text-align: center;
+      z-index: 2;
+      margin-top: 10px;
+    }
 
-header h1 {
-  color: #2563eb;
-  margin-bottom: 5px;
-}
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      margin-bottom: 4px;
+    }
 
-header p {
-  color: #64748b;
-  font-size: 13px;
-}
+    .subtitle {
+      font-size: 0.85rem;
+      color: #cbd5e0;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+      margin-bottom: 20px;
+    }
 
-.house {
-  position: relative;
-  width: 100%;
-  overflow: hidden;
-  border-radius: 15px;
-}
+    .bulb-container {
+      width: 96px;
+      height: 96px;
+      margin: 0 auto 12px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(6px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      transition: all 0.4s ease;
+    }
 
-.house img {
-  width: 100%;
-  display: block;
-}
+    .bulb-svg {
+      width: 54px;
+      height: 54px;
+      fill: #718096;
+      transition: all 0.4s ease;
+    }
 
-.bulb {
-  position: absolute;
-  left: 58%;
-  top: 41.5%;
-  transform: translate(-50%, -50%);
-  font-size: 38px;
-  filter: grayscale(1);
-  transition: 0.3s;
-}
+    .bulb-container.is-on {
+      background: rgba(255, 214, 10, 0.25);
+      border-color: rgba(255, 214, 10, 0.6);
+      box-shadow: 0 0 45px rgba(255, 214, 10, 0.8),
+                  inset 0 0 18px rgba(255, 214, 10, 0.5);
+    }
 
-.bulb.on {
-  filter: none;
-  text-shadow: 0 0 12px #ffd700,
-               0 0 28px #ffb300,
-               0 0 45px #ff9900;
-}
+    .bulb-container.is-on .bulb-svg {
+      fill: #ffd60a;
+      filter: drop-shadow(0 0 12px #ffd60a);
+    }
 
-.status {
-  text-align: center;
-  margin: 20px 0;
-}
+    .status-badge {
+      display: inline-block;
+      padding: 5px 16px;
+      border-radius: 50px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: #cbd5e0;
+      transition: all 0.3s ease;
+    }
 
-.status span {
-  font-weight: bold;
-  color: #64748b;
-}
+    .status-badge.is-on {
+      background: rgba(255, 214, 10, 0.2);
+      color: #ffd60a;
+      border-color: rgba(255, 214, 10, 0.5);
+    }
 
-.buttons {
-  display: flex;
-  gap: 15px;
-}
+    /* ส่วนล่าง: แผงปุ่มกด ON / OFF วางตรงพื้นที่สีดำด้านล่าง */
+    .bottom-controls {
+      width: 100%;
+      max-width: 340px;
+      background: rgba(20, 22, 28, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 22px;
+      padding: 18px;
+      z-index: 2;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.7);
+    }
 
-button {
-  flex: 1;
-  padding: 16px;
-  border: none;
-  border-radius: 12px;
-  font-size: 18px;
-  font-weight: bold;
-  cursor: pointer;
-}
+    .btn-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
 
-.on-btn {
-  background: #16a34a;
-  color: white;
-}
+    button {
+      padding: 15px 0;
+      font-size: 1.1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      letter-spacing: 1px;
+    }
 
-.off-btn {
-  background: #dc2626;
-  color: white;
-}
+    button:active {
+      transform: scale(0.95);
+    }
 
-button:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
+    .btn-on {
+      background: #2ecc71;
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(46, 204, 113, 0.35);
+    }
 
-footer {
-  text-align: center;
-  color: #94a3b8;
-  font-size: 12px;
-  margin-top: 25px;
-}
-</style>
+    .btn-on:hover {
+      background: #27ae60;
+    }
+
+    .btn-off {
+      background: #e74c3c;
+      color: #ffffff;
+      box-shadow: 0 6px 20px rgba(231, 76, 60, 0.35);
+    }
+
+    .btn-off:hover {
+      background: #c0392b;
+    }
+  </style>
 </head>
-
 <body>
-<div class="container">
 
-<header>
-  <h1>SMART HOME</h1>
-  <p>ADEL | IoT LIGHT CONTROL</p>
-</header>
+  <!-- ส่วนบน: หลอดไฟอยู่บนท้องฟ้า ไม่บังตัวบ้าน -->
+  <div class="top-section">
+    <h1>Smart Home Adel</h1>
+    <p class="subtitle">ระบบควบคุมแสงสว่าง ESP32</p>
 
-<div class="house">
-  <img src="house.jpg" alt="My Smart Home">
-  <div class="bulb" id="bulb">💡</div>
-</div>
+    <div id="bulbBox" class="bulb-container">
+      <svg class="bulb-svg" viewBox="0 0 24 24">
+        <path d="M9 21c0 .55.45 1 1 1h4c.55 0 1-.45 1-1v-1H9v1zm3-19C8.14 2 5 5.14 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.86-3.14-7-7-7z"/>
+      </svg>
+    </div>
 
-<div class="status">
-  <h3>LIGHT 01</h3>
-  <span id="status">STATUS: CONNECTING...</span>
-</div>
+    <div id="statusText" class="status-badge">สถานะ: ปิดไฟ (OFF)</div>
+  </div>
 
-<div class="buttons">
-  <button class="on-btn" id="onBtn"
-    onclick="controlLight('ON')">ON</button>
-  <button class="off-btn" id="offBtn"
-    onclick="controlLight('OFF')">OFF</button>
-</div>
+  <!-- ส่วนล่าง: ปุ่ม ON / OFF อยู่ตรงเงาต้นไม้ด้านล่าง -->
+  <div class="bottom-controls">
+    <div class="btn-group">
+      <button class="btn-on" onclick="setLight('ON')">ON</button>
+      <button class="btn-off" onclick="setLight('OFF')">OFF</button>
+    </div>
+  </div>
 
-<footer>SMART HOME ESP32 PROJECT © 2026</footer>
-</div>
+  <script>
+    const bulbBox = document.getElementById('bulbBox');
+    const statusText = document.getElementById('statusText');
 
-<script>
-const API_URL = "https://smart-home-server-adel.onrender.com";
-
-const bulb = document.getElementById("bulb");
-const statusText = document.getElementById("status");
-
-const buttons = [
-  document.getElementById("onBtn"),
-  document.getElementById("offBtn")
-];
-
-function updateDisplay(state) {
-  if (state === "ON") {
-    bulb.classList.add("on");
-    statusText.innerText = "STATUS: ON";
-    statusText.style.color = "#16a34a";
-  } else {
-    bulb.classList.remove("on");
-    statusText.innerText = "STATUS: OFF";
-    statusText.style.color = "#dc2626";
-  }
-}
-
-async function controlLight(state) {
-  buttons.forEach(btn => btn.disabled = true);
-  statusText.innerText = "SENDING COMMAND...";
-
-  try {
-    const response = await fetch(API_URL + "/api/light", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ state: state })
-    });
-
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+    function updateUI(state) {
+      if (state === 'ON') {
+        document.body.classList.add('light-on');
+        bulbBox.classList.add('is-on');
+        statusText.classList.add('is-on');
+        statusText.textContent = 'สถานะ: เปิดไฟ (ON)';
+      } else {
+        document.body.classList.remove('light-on');
+        bulbBox.classList.remove('is-on');
+        statusText.classList.remove('is-on');
+        statusText.textContent = 'สถานะ: ปิดไฟ (OFF)';
+      }
     }
 
-    const data = await response.json();
-    updateDisplay(data.led);
-
-  } catch (error) {
-    console.error("Control error:", error);
-    statusText.innerText = "CONNECTION ERROR";
-    statusText.style.color = "#dc2626";
-    alert("ส่งคำสั่งไม่สำเร็จ กรุณาตรวจสอบ Server");
-  } finally {
-    buttons.forEach(btn => btn.disabled = false);
-  }
-}
-
-async function checkStatus() {
-  try {
-    const response = await fetch(API_URL + "/api/state");
-
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
+    async function setLight(state) {
+      updateUI(state);
+      try {
+        const res = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: state })
+        });
+        const data = await res.json();
+        if (data.success) {
+          updateUI(data.status);
+        }
+      } catch (err) {
+        console.error('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้:', err);
+      }
     }
 
-    const data = await response.json();
-    updateDisplay(data.led);
+    async function fetchStatus() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        updateUI(data.status);
+      } catch (err) {
+        console.error('กำลังรอเซิร์ฟเวอร์...', err);
+      }
+    }
 
-  } catch (error) {
-    statusText.innerText = "SERVER OFFLINE";
-    statusText.style.color = "#dc2626";
-  }
-}
+    fetchStatus();
+    setInterval(fetchStatus, 2000);
+  </script>
 
-checkStatus();
-setInterval(checkStatus, 3000);
-</script>
 </body>
 </html>

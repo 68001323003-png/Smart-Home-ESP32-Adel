@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -55,7 +56,6 @@ header p {
   display: block;
 }
 
-/* ตำแหน่งหลอดไฟบนบ้าน */
 .bulb {
   position: absolute;
   left: 58%;
@@ -113,6 +113,11 @@ button:active {
   transform: scale(0.97);
 }
 
+button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 footer {
   text-align: center;
   color: #94a3b8;
@@ -138,17 +143,15 @@ footer {
 
 <div class="status">
   <h3>LIGHT 01</h3>
-  <span id="status">STATUS: OFF</span>
+  <span id="status">STATUS: CONNECTING...</span>
 </div>
 
 <div class="buttons">
-  <button class="on-btn" onclick="controlLight(true)">
-    ON
-  </button>
+  <button class="on-btn" id="onBtn"
+    onclick="controlLight(true)">ON</button>
 
-  <button class="off-btn" onclick="controlLight(false)">
-    OFF
-  </button>
+  <button class="off-btn" id="offBtn"
+    onclick="controlLight(false)">OFF</button>
 </div>
 
 <footer>
@@ -158,20 +161,109 @@ footer {
 </div>
 
 <script>
-function controlLight(state) {
-  const bulb = document.getElementById("bulb");
-  const status = document.getElementById("status");
 
-  if (state) {
+// ใส่ URL Render ของคุณตรงนี้
+const API_URL = "https://YOUR-APP.onrender.com";
+
+const bulb = document.getElementById("bulb");
+const statusText = document.getElementById("status");
+const buttons = [
+  document.getElementById("onBtn"),
+  document.getElementById("offBtn")
+];
+
+// แสดงสถานะบนเว็บไซต์
+function updateDisplay(state) {
+
+  if (state === "ON") {
     bulb.classList.add("on");
-    status.innerText = "STATUS: ON";
-    status.style.color = "#16a34a";
+    statusText.innerText = "STATUS: ON";
+    statusText.style.color = "#16a34a";
   } else {
     bulb.classList.remove("on");
-    status.innerText = "STATUS: OFF";
-    status.style.color = "#dc2626";
+    statusText.innerText = "STATUS: OFF";
+    statusText.style.color = "#dc2626";
   }
 }
+
+// ส่งคำสั่งเปิดปิดไฟไป Render
+async function controlLight(state) {
+
+  const command = state ? "ON" : "OFF";
+
+  buttons.forEach(btn => btn.disabled = true);
+  statusText.innerText = "SENDING COMMAND...";
+
+  try {
+
+    const response = await fetch(
+      API_URL + "/api/light",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          state: command
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Server error");
+    }
+
+    const data = await response.json();
+
+    updateDisplay(data.led);
+
+  } catch (error) {
+
+    statusText.innerText = "CONNECTION ERROR";
+    statusText.style.color = "#dc2626";
+
+    console.error(error);
+
+    alert("ไม่สามารถเชื่อมต่อ Render ได้");
+
+  } finally {
+
+    buttons.forEach(btn => btn.disabled = false);
+
+  }
+}
+
+// ตรวจสอบสถานะจาก Render
+async function checkStatus() {
+
+  try {
+
+    const response = await fetch(
+      API_URL + "/api/state"
+    );
+
+    if (!response.ok) {
+      throw new Error("Server error");
+    }
+
+    const data = await response.json();
+
+    updateDisplay(data.led);
+
+  } catch (error) {
+
+    statusText.innerText = "SERVER OFFLINE";
+    statusText.style.color = "#dc2626";
+
+  }
+}
+
+// เริ่มต้นตรวจสอบสถานะ
+checkStatus();
+
+// ตรวจสอบสถานะทุก 2 วินาที
+setInterval(checkStatus, 2000);
+
 </script>
 
 </body>

@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
@@ -8,9 +7,7 @@
 <title>Smart Home Adel</title>
 
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
@@ -64,7 +61,6 @@ header p {
   font-size: 38px;
   filter: grayscale(1);
   transition: 0.3s;
-  z-index: 2;
 }
 
 .bulb.on {
@@ -109,10 +105,6 @@ button {
   color: white;
 }
 
-button:active {
-  transform: scale(0.97);
-}
-
 button:disabled {
   opacity: 0.6;
   cursor: wait;
@@ -128,7 +120,6 @@ footer {
 </head>
 
 <body>
-
 <div class="container">
 
 <header>
@@ -148,33 +139,26 @@ footer {
 
 <div class="buttons">
   <button class="on-btn" id="onBtn"
-    onclick="controlLight(true)">ON</button>
-
+    onclick="controlLight('ON')">ON</button>
   <button class="off-btn" id="offBtn"
-    onclick="controlLight(false)">OFF</button>
+    onclick="controlLight('OFF')">OFF</button>
 </div>
 
-<footer>
-  SMART HOME ESP32 PROJECT © 2026
-</footer>
-
+<footer>SMART HOME ESP32 PROJECT © 2026</footer>
 </div>
 
 <script>
-
-// ใส่ URL Render ของคุณตรงนี้
 const API_URL = "https://smart-home-server-adel.onrender.com";
 
 const bulb = document.getElementById("bulb");
 const statusText = document.getElementById("status");
+
 const buttons = [
   document.getElementById("onBtn"),
   document.getElementById("offBtn")
 ];
 
-// แสดงสถานะบนเว็บไซต์
 function updateDisplay(state) {
-
   if (state === "ON") {
     bulb.classList.add("on");
     statusText.innerText = "STATUS: ON";
@@ -186,85 +170,55 @@ function updateDisplay(state) {
   }
 }
 
-// ส่งคำสั่งเปิดปิดไฟไป Render
 async function controlLight(state) {
-
-  const command = state ? "ON" : "OFF";
-
   buttons.forEach(btn => btn.disabled = true);
   statusText.innerText = "SENDING COMMAND...";
 
   try {
-
-    const response = await fetch(
-      API_URL + "/api/light",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          state: command
-        })
-      }
-    );
+    const response = await fetch(API_URL + "/api/light", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ state: state })
+    });
 
     if (!response.ok) {
-      throw new Error("Server error");
+      throw new Error("HTTP " + response.status);
     }
 
     const data = await response.json();
-
     updateDisplay(data.led);
 
   } catch (error) {
-
+    console.error("Control error:", error);
     statusText.innerText = "CONNECTION ERROR";
     statusText.style.color = "#dc2626";
-
-    console.error(error);
-
-    alert("ไม่สามารถเชื่อมต่อ Render ได้");
-
+    alert("ส่งคำสั่งไม่สำเร็จ กรุณาตรวจสอบ Server");
   } finally {
-
     buttons.forEach(btn => btn.disabled = false);
-
   }
 }
 
-// ตรวจสอบสถานะจาก Render
 async function checkStatus() {
-
   try {
-
-    const response = await fetch(
-      API_URL + "/api/state"
-    );
+    const response = await fetch(API_URL + "/api/state");
 
     if (!response.ok) {
-      throw new Error("Server error");
+      throw new Error("HTTP " + response.status);
     }
 
     const data = await response.json();
-
     updateDisplay(data.led);
 
   } catch (error) {
-
     statusText.innerText = "SERVER OFFLINE";
     statusText.style.color = "#dc2626";
-
   }
 }
 
-// เริ่มต้นตรวจสอบสถานะ
 checkStatus();
-
-// ตรวจสอบสถานะทุก 2 วินาที
-setInterval(checkStatus, 2000);
-
+setInterval(checkStatus, 3000);
 </script>
-
 </body>
 </html>

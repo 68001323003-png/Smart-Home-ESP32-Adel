@@ -1,41 +1,54 @@
-
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const STATE_FILE = path.join(__dirname, 'state_data.json');
 
 app.use(cors());
 app.use(express.json());
-// ให้เซิร์ฟเวอร์แสดงไฟล์หน้าเว็บ (index.html และ house.jpg) ในโฟลเดอร์นี้
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ตัวแปรเก็บสถานะหลอดไฟล่าสุด (เริ่มต้นที่ปิด = "OFF")
-let lightState = "OFF";
+function readState() {
+  try {
+    if (!fs.existsSync(STATE_FILE)) {
+      fs.writeFileSync(STATE_FILE, JSON.stringify({ status: "OFF" }, null, 2));
+    }
+    const data = fs.readFileSync(STATE_FILE, 'utf8');
+    return JSON.parse(data).status || "OFF";
+  } catch (err) {
+    return "OFF";
+  }
+}
 
-// 1. API สำหรับหน้าเว็บและ ESP32 ดึงสถานะไฟปัจจุบัน
+function writeState(newStatus) {
+  try {
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ status: newStatus }, null, 2));
+  } catch (err) {
+    console.error(err);
+  }
+}
+
 app.get('/api/status', (req, res) => {
-  res.json({ status: lightState });
+  res.json({ status: readState() });
 });
 
-// 2. API สำหรับหน้าเว็บส่งคำสั่งเปิด-ปิดไฟ
 app.post('/api/control', (req, res) => {
   const { status } = req.body;
   if (status === "ON" || status === "OFF") {
-    lightState = status;
-    console.log(`Light status changed to: ${lightState}`);
-    res.json({ success: true, status: lightState });
+    writeState(status);
+    res.json({ success: true, status: status });
   } else {
-    res.status(400).json({ success: false, message: "Invalid status" });
+    res.status(400).json({ success: false });
   }
 });
 
-// หน้าหลักเปิดไฟล์ index.html
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'index.html'));
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 app.listen(PORT, () => {
-  console.log(`Smart Home Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
